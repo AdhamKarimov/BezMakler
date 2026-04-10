@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (HouseListCreateView, HouseDetailView, WishlistToggleView, WishlistView, MessageListCreateView,
-                    RegionListView, DistrictListView, )
+                    RegionListView, DistrictListView, RecentlyViewedListView, )
 
 urlpatterns = [
     path('houses/', HouseListCreateView.as_view()),
@@ -8,6 +8,7 @@ urlpatterns = [
     path('wishlist/', WishlistView.as_view()),
     path('wishlist/toggle/', WishlistToggleView.as_view()),
     path('messages/', MessageListCreateView.as_view()),
+    path('recently-viewed/', RecentlyViewedListView.as_view(), name='recently-viewed'),
     path('regions/', RegionListView.as_view(), name='region-list'),
     path('regions/<int:region_id>/', DistrictListView.as_view(), name='district-list'),
 ]

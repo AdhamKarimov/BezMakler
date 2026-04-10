@@ -1,20 +1,26 @@
 from rest_framework import serializers
-from .models import House, HouseImage, Region, District, Wishlist, Review, Message
+from .models import House, HouseImage, Region, District, Wishlist, Review, Message, RecentlyViewed
+
+
+
 
 class HouseImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = HouseImage
         fields = ['id', 'image']
 
+
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
         fields = ['id', 'name']
 
+
 class DistrictSerializer(serializers.ModelSerializer):
     class Meta:
         model = District
         fields = ['id', 'name', 'region']
+
 
 class HouseListSerializer(serializers.ModelSerializer):
     images = HouseImageSerializer(many=True, read_only=True)
@@ -24,6 +30,7 @@ class HouseListSerializer(serializers.ModelSerializer):
     class Meta:
             model = House
             fields = ['id', 'region_name', 'district_name', 'price', 'images', 'created_at']
+
 
 class HouseDetailSerializer(serializers.ModelSerializer):
     images = HouseImageSerializer(many=True, read_only=True)
@@ -50,12 +57,14 @@ class HouseDetailSerializer(serializers.ModelSerializer):
         similar = House.objects.filter(district=obj.district).exclude(id=obj.id)[:5]
         return HouseListSerializer(similar, many=True).data
 
+
 class WishlistSerializer(serializers.ModelSerializer):
     house_details = HouseListSerializer(source='house', read_only=True)
 
     class Meta:
         model = Wishlist
         fields = ['id', 'house', 'house_details']
+
 
 class MessageSerializer(serializers.ModelSerializer):
     sender_email = serializers.ReadOnlyField(source='sender.email')
@@ -67,3 +76,9 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 
+class RecentlyViewedSerializer(serializers.ModelSerializer):
+    house_details = HouseListSerializer(source='house', read_only=True)
+
+    class Meta:
+        model = RecentlyViewed
+        fields = ['id', 'house', 'house_details', 'viewed_at']

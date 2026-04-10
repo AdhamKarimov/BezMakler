@@ -1,15 +1,18 @@
 from rest_framework import generics, permissions, status, filters
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import House, Wishlist, Report, Message, Region, District
-from .serializers import HouseListSerializer, HouseDetailSerializer, WishlistSerializer, MessageSerializer, \
-    RegionSerializer, DistrictSerializer
-from .permission import IsPremiumUser, IsOwnerOrReadOnly, CanChatPermission
 from django.db import models
+
+from .models import House, Wishlist, Message, RecentlyViewed, Region, District
+from .serializers import (
+    HouseListSerializer, HouseDetailSerializer,
+    WishlistSerializer, MessageSerializer, RecentlyViewedSerializer, RegionSerializer, DistrictSerializer
+)
+from .permission import IsPremiumUser, IsOwnerOrReadOnly, CanChatPermission
 
 
 class HouseListCreateView(generics.ListCreateAPIView):
-    queryset = House.objects.filter(is_active=True).order_by('-created_at')
+    queryset = House.objects.filter(is_active=True).order_back = '-created_at'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['region', 'district']
 
@@ -36,6 +39,17 @@ class HouseDetailView(generics.RetrieveUpdateDestroyAPIView):
             return [permissions.IsAuthenticated(), IsOwnerOrReadOnly()]
         return [permissions.IsAuthenticated()]
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # Foydalanuvchi login qilgan bo'lsa, tarixga saqlaymiz
+        if request.user.is_authenticated:
+            RecentlyViewed.objects.update_or_create(
+                user=request.user,
+                house=instance
+            )
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
 
 class WishlistToggleView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -59,7 +73,7 @@ class WishlistToggleView(generics.GenericAPIView):
 
 
 class WishlistView(generics.ListAPIView):
-    permission_classes = [permissions.IsAuthenticated()]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = WishlistSerializer
 
     def get_queryset(self):
@@ -72,18 +86,30 @@ class MessageListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Message.objects.filter(models.Q(sender=user) | models.Q(receiver=user)).order_by('-created_at')
+        return Message.objects.filter(
+            models.Q(sender=user) | models.Q(receiver=user)
+        ).order_by('-created_at')
 
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
 
     def create(self, request, *args, **kwargs):
+        # TZ: Premium bo'lmasa xabar yubora olmaydi
         if not getattr(request.user, 'is_premium', False):
             return Response(
                 {"detail": "Xabar yuborish uchun Premium tarif sotib oling!"},
                 status=status.HTTP_403_FORBIDDEN
             )
         return super().create(request, *args, **kwargs)
+
+
+class RecentlyViewedListView(generics.ListAPIView):
+    serializer_class = RecentlyViewedSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return RecentlyViewed.objects.filter(user=self.request.user)[:5]
+
 
 
 class RegionListView(generics.ListAPIView):

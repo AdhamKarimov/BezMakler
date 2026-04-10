@@ -78,3 +78,16 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.sender} -> {self.receiver}"
+
+
+class RecentlyViewed(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='recently_viewed')
+    house = models.ForeignKey(House, on_delete=models.CASCADE)
+    viewed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-viewed_at']
+        unique_together = ('user', 'house')
+
+    def __str__(self):
+        return f"{self.user.email} viewed {self.house.id}"
