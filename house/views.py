@@ -11,8 +11,9 @@ from .serializers import (
 from .permission import IsPremiumUser, IsOwnerOrReadOnly, CanChatPermission
 
 
+
 class HouseListCreateView(generics.ListCreateAPIView):
-    queryset = House.objects.filter(is_active=True).order_back = '-created_at'
+    queryset = House.objects.filter(is_active=True).order_by('-created_at')
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['region', 'district']
 
